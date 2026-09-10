@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study8 - 날씨</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; }
+
+    form {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+    button {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 6px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #b9c2d0; cursor: not-allowed; }
+
+    .examples { font-size: 12px; color: #888; margin-top: -12px; margin-bottom: 20px; }
+    .examples button {
+        background: none;
+        border: none;
+        color: #2f6feb;
+        padding: 0;
+        font-size: 12px;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    #weatherCard {
+        display: none;
+        background: linear-gradient(135deg, #6fa8ff, #4a7ee0);
+        color: #fff;
+        border-radius: 16px;
+        padding: 28px 24px;
+        text-align: center;
+    }
+    #weatherCard .icon { font-size: 56px; }
+    #weatherCard .city { font-size: 20px; font-weight: bold; margin-top: 8px; }
+    #weatherCard .country { font-size: 13px; opacity: 0.85; }
+    #weatherCard .temp { font-size: 44px; font-weight: bold; margin: 12px 0 4px; }
+    #weatherCard .description { font-size: 15px; margin-bottom: 16px; }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        font-size: 13px;
+        border-top: 1px solid rgba(255,255,255,0.3);
+        padding-top: 14px;
+    }
+    .stats div { text-align: center; }
+    .stats .label { opacity: 0.8; }
+    .stats .value { font-size: 15px; font-weight: bold; margin-top: 2px; }
+
+    #observedAt { margin-top: 14px; font-size: 11px; opacity: 0.75; }
+</style>
+</head>
+<body>
+
+<h1>날씨 조회</h1>
+<p class="desc">study8 — 우리 서버가 외부 공개 API(Open-Meteo)를 대신 호출해서, 그 결과를 우리 API 형태로 내려줍니다.</p>
+
+<form id="searchForm">
+    <input type="text" id="cityInput" placeholder="도시 이름 (예: Seoul, Tokyo, Paris)" required>
+    <button type="submit" id="searchBtn">조회</button>
+</form>
+<div class="examples">
+    예시:
+    <button type="button" data-city="Seoul">Seoul</button> ·
+    <button type="button" data-city="Tokyo">Tokyo</button> ·
+    <button type="button" data-city="Paris">Paris</button> ·
+    <button type="button" data-city="New York">New York</button>
+</div>
+
+<div id="errorBox"></div>
+
+<div id="weatherCard">
+    <div class="icon" id="weatherIcon">☀️</div>
+    <div class="city" id="weatherCity"></div>
+    <div class="country" id="weatherCountry"></div>
+    <div class="temp" id="weatherTemp"></div>
+    <div class="description" id="weatherDescription"></div>
+    <div class="stats">
+        <div>
+            <div class="label">습도</div>
+            <div class="value" id="weatherHumidity"></div>
+        </div>
+        <div>
+            <div class="label">풍속</div>
+            <div class="value" id="weatherWind"></div>
+        </div>
+    </div>
+    <div id="observedAt"></div>
+</div>
+
+<script>
+    const WEATHER_ICONS = {
+        "맑음": "☀️",
+        "대체로 맑음": "🌤️",
+        "흐림": "☁️",
+        "안개": "🌫️",
+        "이슬비": "🌦️",
+        "비": "🌧️",
+        "눈": "❄️",
+        "소나기": "🌦️",
+        "소나기 눈": "🌨️",
+        "뇌우": "⛈️",
+        "알 수 없음": "❓"
+    };
+
+    const errorBox = document.getElementById("errorBox");
+    const weatherCard = document.getElementById("weatherCard");
+    const searchBtn = document.getElementById("searchBtn");
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    async function fetchWeather(city) {
+        clearError();
+        weatherCard.style.display = "none";
+        searchBtn.disabled = true;
+        searchBtn.textContent = "조회 중...";
+
+        try {
+            const response = await fetch("/weather?city=" + encodeURIComponent(city));
+            const body = await response.json();
+
+            if (!response.ok) {
+                throw new Error(body.message || `요청 실패 (HTTP ${response.status})`);
+            }
+            renderWeather(body);
+        } catch (err) {
+            showError(err.message);
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "조회";
+        }
+    }
+
+    function renderWeather(weather) {
+        document.getElementById("weatherIcon").textContent = WEATHER_ICONS[weather.description] || "🌡️";
+        document.getElementById("weatherCity").textContent = weather.city;
+        document.getElementById("weatherCountry").textContent = weather.country;
+        document.getElementById("weatherTemp").textContent = `${weather.temperature.toFixed(1)}°C`;
+        document.getElementById("weatherDescription").textContent = weather.description;
+        document.getElementById("weatherHumidity").textContent = `${weather.humidity}%`;
+        document.getElementById("weatherWind").textContent = `${weather.windSpeed.toFixed(1)} km/h`;
+        document.getElementById("observedAt").textContent = `측정 시각: ${weather.observedAt}`;
+        weatherCard.style.display = "block";
+    }
+
+    document.getElementById("searchForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const city = document.getElementById("cityInput").value.trim();
+        if (city) fetchWeather(city);
+    });
+
+    document.querySelectorAll(".examples button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            document.getElementById("cityInput").value = btn.dataset.city;
+            fetchWeather(btn.dataset.city);
+        });
+    });
+</script>
+
+</body>
+</html>

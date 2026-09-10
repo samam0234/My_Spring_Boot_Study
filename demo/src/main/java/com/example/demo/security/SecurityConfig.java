@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**", "/weather/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
