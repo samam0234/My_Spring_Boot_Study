@@ -26,8 +26,8 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
-	runtimeOnly 'com.h2database:h2'
-	runtimeOnly 'org.springframework.boot:spring-boot-h2console'
+	runtimeOnly 'org.xerial:sqlite-jdbc'
+	runtimeOnly 'org.hibernate.orm:hibernate-community-dialects'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
