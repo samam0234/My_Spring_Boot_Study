@@ -93,7 +93,29 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("최신 글"))
-                .andExpect(jsonPath("$[1].title").value("오래된 글"));
+                .andExpect(jsonPath("$.content[0].title").value("최신 글"))
+                .andExpect(jsonPath("$.content[1].title").value("오래된 글"));
+    }
+
+    @Test
+    void listIsPaginated() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            String json = objectMapper.writeValueAsString(new PostRequest("글 " + i, "내용" + i, "작성자"));
+            mockMvc.perform(post("/posts").contentType(MediaType.APPLICATION_JSON).content(json))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/posts").param("page", "0").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.hasNext").value(true));
+
+        mockMvc.perform(get("/posts").param("page", "1").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.hasNext").value(false));
     }
 }
