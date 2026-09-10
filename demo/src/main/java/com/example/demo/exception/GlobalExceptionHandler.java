@@ -43,6 +43,24 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(StockNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleStockNotFound(StockNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(StockServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleStockServiceUnavailable(StockServiceUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateWatchlistItemException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateWatchlistItem(DuplicateWatchlistItemException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateUsernameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateUsername(DuplicateUsernameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

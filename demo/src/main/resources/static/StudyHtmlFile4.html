@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study9 - 주식</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; }
+
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    h2 { font-size: 16px; margin-top: 0; }
+
+    #loginNotice {
+        display: none;
+        background: #fff8e1;
+        border: 1px solid #ffe08a;
+        color: #8a6d00;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    form { display: flex; gap: 8px; }
+    input {
+        flex: 1;
+        padding: 9px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+        text-transform: uppercase;
+    }
+    button {
+        padding: 9px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    button.secondary { background: #6b7280; }
+    button.danger { background: #d64545; padding: 4px 10px; font-size: 12px; }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #b9c2d0; cursor: not-allowed; }
+
+    .examples { font-size: 12px; color: #888; margin-top: 8px; }
+    .examples button {
+        background: none; border: none; color: #2f6feb; padding: 0;
+        font-size: 12px; text-decoration: underline; cursor: pointer; text-transform: none;
+    }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    #quoteCard { display: none; margin-top: 16px; }
+    .quote-name { font-size: 15px; font-weight: bold; }
+    .quote-symbol { font-size: 12px; color: #888; }
+    .quote-price { font-size: 32px; font-weight: bold; margin: 8px 0 2px; }
+    .quote-change { font-size: 14px; font-weight: bold; }
+    .quote-change.up { color: #c0392b; }
+    .quote-change.down { color: #2166d6; }
+    .quote-stats { display: flex; gap: 20px; font-size: 12px; color: #555; margin-top: 10px; }
+
+    ul#watchlist { list-style: none; padding: 0; margin: 0; }
+    ul#watchlist li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 4px;
+        border-bottom: 1px solid #eee;
+    }
+    .wl-left { display: flex; flex-direction: column; }
+    .wl-symbol { font-weight: bold; font-size: 14px; }
+    .wl-name { font-size: 12px; color: #888; }
+    .wl-right { display: flex; align-items: center; gap: 12px; }
+    .wl-price { font-size: 15px; font-weight: bold; }
+    .empty { color: #999; font-size: 13px; padding: 12px 4px; }
+</style>
+</head>
+<body>
+
+<h1>주식 시세 &amp; 관심 종목</h1>
+<p class="desc">study9 — 외부 실시간 시세 API(Yahoo Finance)와 로그인한 사용자의 관심 종목(우리 DB)을 조합합니다.</p>
+
+<div id="errorBox"></div>
+
+<section>
+    <h2>종목 검색</h2>
+    <form id="searchForm">
+        <input type="text" id="symbolInput" placeholder="예: AAPL, MSFT, 005930.KS" required>
+        <button type="submit" id="searchBtn">조회</button>
+    </form>
+    <div class="examples">
+        예시:
+        <button type="button" data-symbol="AAPL">AAPL</button> ·
+        <button type="button" data-symbol="MSFT">MSFT</button> ·
+        <button type="button" data-symbol="005930.KS">삼성전자(005930.KS)</button>
+    </div>
+
+    <div id="quoteCard">
+        <div class="quote-name" id="qName"></div>
+        <div class="quote-symbol" id="qSymbol"></div>
+        <div class="quote-price" id="qPrice"></div>
+        <div class="quote-change" id="qChange"></div>
+        <div class="quote-stats">
+            <span>전일 종가: <span id="qPrevClose"></span></span>
+            <span>고가: <span id="qHigh"></span></span>
+            <span>저가: <span id="qLow"></span></span>
+        </div>
+        <button type="button" id="addToWatchlistBtn" style="margin-top:14px;">관심 종목에 추가</button>
+    </div>
+</section>
+
+<div id="loginNotice">로그인해야 관심 종목을 저장하고 볼 수 있습니다. (Study7의 <code>StudyHtmlFile2.html</code>에서 먼저 로그인해주세요 — 같은 브라우저면 토큰이 공유됩니다.)</div>
+
+<section id="watchlistSection">
+    <h2>내 관심 종목</h2>
+    <button type="button" class="secondary" id="refreshBtn" style="margin-bottom:12px;">새로고침</button>
+    <ul id="watchlist"></ul>
+</section>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+    const quoteCard = document.getElementById("quoteCard");
+    const searchBtn = document.getElementById("searchBtn");
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+    function getToken() { return localStorage.getItem("token"); }
+
+    function formatNumber(n) {
+        return Number(n).toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    }
+
+    let currentQuote = null;
+
+    async function searchStock(symbol) {
+        clearError();
+        quoteCard.style.display = "none";
+        searchBtn.disabled = true;
+        searchBtn.textContent = "조회 중...";
+
+        try {
+            const response = await fetch("/stocks/" + encodeURIComponent(symbol));
+            const body = await response.json();
+            if (!response.ok) {
+                throw new Error(body.message || `요청 실패 (HTTP ${response.status})`);
+            }
+            currentQuote = body;
+            renderQuote(body);
+        } catch (err) {
+            showError(err.message);
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "조회";
+        }
+    }
+
+    function renderQuote(q) {
+        document.getElementById("qName").textContent = q.name;
+        document.getElementById("qSymbol").textContent = `${q.symbol} · ${q.currency}`;
+        document.getElementById("qPrice").textContent = formatNumber(q.price);
+
+        const changeEl = document.getElementById("qChange");
+        const sign = q.changePercent >= 0 ? "+" : "";
+        changeEl.textContent = `${sign}${q.changePercent.toFixed(2)}%`;
+        changeEl.className = "quote-change " + (q.changePercent >= 0 ? "up" : "down");
+
+        document.getElementById("qPrevClose").textContent = formatNumber(q.previousClose);
+        document.getElementById("qHigh").textContent = formatNumber(q.dayHigh);
+        document.getElementById("qLow").textContent = formatNumber(q.dayLow);
+
+        quoteCard.style.display = "block";
+    }
+
+    document.getElementById("searchForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const symbol = document.getElementById("symbolInput").value.trim();
+        if (symbol) searchStock(symbol);
+    });
+
+    document.querySelectorAll(".examples button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            document.getElementById("symbolInput").value = btn.dataset.symbol;
+            searchStock(btn.dataset.symbol);
+        });
+    });
+
+    // ---- 관심 종목 (로그인 필요) ----
+    async function authApi(path, options = {}) {
+        const token = getToken();
+        if (!token) throw new Error("로그인이 필요합니다.");
+
+        const headers = Object.assign({}, options.headers || {}, { "Authorization": "Bearer " + token });
+        const response = await fetch(path, Object.assign({}, options, { headers }));
+
+        if (response.status === 403) {
+            throw new Error("로그인이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.");
+        }
+
+        const isJson = response.headers.get("content-type")?.includes("application/json");
+        const body = isJson ? await response.json() : null;
+
+        if (!response.ok) {
+            throw new Error(body?.message || `요청 실패 (HTTP ${response.status})`);
+        }
+        return body;
+    }
+
+    async function loadWatchlist() {
+        const list = document.getElementById("watchlist");
+        if (!getToken()) {
+            document.getElementById("loginNotice").style.display = "block";
+            document.getElementById("watchlistSection").style.display = "none";
+            return;
+        }
+        document.getElementById("loginNotice").style.display = "none";
+        document.getElementById("watchlistSection").style.display = "block";
+
+        try {
+            const stocks = await authApi("/watchlist", { method: "GET" });
+            renderWatchlist(stocks);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function renderWatchlist(stocks) {
+        const list = document.getElementById("watchlist");
+        list.innerHTML = "";
+
+        if (stocks.length === 0) {
+            list.innerHTML = '<li class="empty">관심 종목이 없습니다. 위에서 종목을 검색하고 추가해보세요.</li>';
+            return;
+        }
+
+        stocks.forEach((q) => {
+            const li = document.createElement("li");
+            const sign = q.changePercent >= 0 ? "+" : "";
+            const changeClass = q.changePercent >= 0 ? "up" : "down";
+            li.innerHTML = `
+                <div class="wl-left">
+                    <span class="wl-symbol">${q.symbol}</span>
+                    <span class="wl-name">${q.name}</span>
+                </div>
+                <div class="wl-right">
+                    <div style="text-align:right;">
+                        <div class="wl-price">${formatNumber(q.price)}</div>
+                        <div class="quote-change ${changeClass}" style="font-size:12px;">${sign}${q.changePercent.toFixed(2)}%</div>
+                    </div>
+                    <button type="button" class="danger" data-symbol="${q.symbol}">삭제</button>
+                </div>
+            `;
+            li.querySelector("button").addEventListener("click", () => removeFromWatchlist(q.symbol));
+            list.appendChild(li);
+        });
+    }
+
+    document.getElementById("addToWatchlistBtn").addEventListener("click", async () => {
+        clearError();
+        if (!currentQuote) return;
+
+        try {
+            await authApi("/watchlist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ symbol: currentQuote.symbol })
+            });
+            await loadWatchlist();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    async function removeFromWatchlist(symbol) {
+        clearError();
+        try {
+            await authApi("/watchlist/" + encodeURIComponent(symbol), { method: "DELETE" });
+            await loadWatchlist();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", loadWatchlist);
+
+    loadWatchlist();
+</script>
+
+</body>
+</html>

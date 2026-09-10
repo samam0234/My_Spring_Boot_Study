@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**", "/weather/**").permitAll()
+                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**", "/weather/**", "/stocks/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
