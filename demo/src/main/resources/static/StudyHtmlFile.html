@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study6 - 간단한 게시판</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 720px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; }
+
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    h2 { font-size: 16px; margin-top: 0; }
+
+    label { display: block; font-size: 13px; color: #555; margin-top: 10px; margin-bottom: 4px; }
+    input, textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    button {
+        margin-top: 14px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    button.secondary { background: #6b7280; }
+    button.danger { background: #d64545; }
+    button:hover { opacity: 0.9; }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    ul#postList { list-style: none; padding: 0; margin: 0; }
+    ul#postList li {
+        padding: 12px 4px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+    }
+    ul#postList li:hover { background: #fafbff; }
+    .post-title { font-weight: bold; font-size: 15px; }
+    .post-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    .empty { color: #999; font-size: 13px; padding: 12px 4px; }
+
+    #detail { display: none; }
+    #detail .post-content { white-space: pre-wrap; line-height: 1.5; margin: 12px 0; }
+    #detail .actions { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<h1>간단한 게시판</h1>
+<p class="desc">study6 — Spring Boot REST API(<code>/posts</code>)를 순수 HTML/JS(fetch)로 호출하는 프론트엔드입니다.</p>
+
+<div id="errorBox"></div>
+
+<section>
+    <h2>글쓰기</h2>
+    <form id="createForm">
+        <label for="title">제목</label>
+        <input type="text" id="title" required>
+
+        <label for="author">작성자</label>
+        <input type="text" id="author" required>
+
+        <label for="content">내용</label>
+        <textarea id="content" required></textarea>
+
+        <button type="submit">등록</button>
+    </form>
+</section>
+
+<section>
+    <h2>글 목록</h2>
+    <ul id="postList"></ul>
+</section>
+
+<section id="detail">
+    <h2 id="detailTitle"></h2>
+    <div class="post-meta" id="detailMeta"></div>
+    <div class="post-content" id="detailContent"></div>
+
+    <div id="viewActions" class="actions">
+        <button type="button" id="editBtn">수정</button>
+        <button type="button" class="danger" id="deleteBtn">삭제</button>
+        <button type="button" class="secondary" id="closeBtn">닫기</button>
+    </div>
+
+    <form id="editForm" style="display:none;">
+        <label for="editTitle">제목</label>
+        <input type="text" id="editTitle" required>
+
+        <label for="editContent">내용</label>
+        <textarea id="editContent" required></textarea>
+
+        <div class="actions">
+            <button type="submit">저장</button>
+            <button type="button" class="secondary" id="cancelEditBtn">취소</button>
+        </div>
+    </form>
+</section>
+
+<script>
+    const API_BASE = "/posts";
+    let currentPostId = null;
+
+    const errorBox = document.getElementById("errorBox");
+    const postList = document.getElementById("postList");
+    const detail = document.getElementById("detail");
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    async function api(path, options) {
+        const response = await fetch(API_BASE + path, options);
+        const isJson = response.headers.get("content-type")?.includes("application/json");
+        const body = isJson ? await response.json() : null;
+
+        if (!response.ok) {
+            const message = body && body.message ? body.message : `요청 실패 (HTTP ${response.status})`;
+            throw new Error(message);
+        }
+        return body;
+    }
+
+    function formatDate(isoString) {
+        if (!isoString) return "";
+        const date = new Date(isoString);
+        return date.toLocaleString("ko-KR");
+    }
+
+    async function loadPosts() {
+        clearError();
+        try {
+            const posts = await api("", { method: "GET" });
+            renderPostList(posts);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function renderPostList(posts) {
+        postList.innerHTML = "";
+
+        if (posts.length === 0) {
+            postList.innerHTML = '<li class="empty">등록된 글이 없습니다.</li>';
+            return;
+        }
+
+        posts.forEach((post) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-meta">${escapeHtml(post.author)} · ${formatDate(post.createdAt)}</div>
+            `;
+            li.addEventListener("click", () => openDetail(post.id));
+            postList.appendChild(li);
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text ?? "";
+        return div.innerHTML;
+    }
+
+    async function openDetail(id) {
+        clearError();
+        try {
+            const post = await api(`/${id}`, { method: "GET" });
+            currentPostId = post.id;
+
+            document.getElementById("detailTitle").textContent = post.title;
+            document.getElementById("detailMeta").textContent =
+                `${post.author} · 작성 ${formatDate(post.createdAt)} · 수정 ${formatDate(post.updatedAt)}`;
+            document.getElementById("detailContent").textContent = post.content;
+
+            document.getElementById("editForm").style.display = "none";
+            document.getElementById("viewActions").style.display = "flex";
+            detail.style.display = "block";
+            detail.scrollIntoView({ behavior: "smooth" });
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    document.getElementById("createForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const title = document.getElementById("title").value;
+        const author = document.getElementById("author").value;
+        const content = document.getElementById("content").value;
+
+        try {
+            await api("", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, author, content })
+            });
+            e.target.reset();
+            await loadPosts();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("editBtn").addEventListener("click", async () => {
+        try {
+            const post = await api(`/${currentPostId}`, { method: "GET" });
+            document.getElementById("editTitle").value = post.title;
+            document.getElementById("editContent").value = post.content;
+            document.getElementById("viewActions").style.display = "none";
+            document.getElementById("editForm").style.display = "block";
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("cancelEditBtn").addEventListener("click", () => {
+        document.getElementById("editForm").style.display = "none";
+        document.getElementById("viewActions").style.display = "flex";
+    });
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const title = document.getElementById("editTitle").value;
+        const content = document.getElementById("editContent").value;
+
+        try {
+            await api(`/${currentPostId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content })
+            });
+            await loadPosts();
+            await openDetail(currentPostId);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("deleteBtn").addEventListener("click", async () => {
+        clearError();
+        if (!confirm("이 글을 삭제할까요?")) return;
+
+        try {
+            await api(`/${currentPostId}`, { method: "DELETE" });
+            detail.style.display = "none";
+            currentPostId = null;
+            await loadPosts();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("closeBtn").addEventListener("click", () => {
+        detail.style.display = "none";
+        currentPostId = null;
+    });
+
+    loadPosts();
+</script>
+
+</body>
+</html>

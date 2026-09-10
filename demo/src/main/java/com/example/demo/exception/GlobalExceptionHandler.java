@@ -19,6 +19,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(PostNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePostNotFound(PostNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateUsernameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateUsername(DuplicateUsernameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
