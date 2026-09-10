@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**", "/weather/**", "/stocks/**").permitAll()
+                        .requestMatchers("/*.html", "/auth/**", "/hello/**", "/posts/**", "/weather/**", "/stocks/**", "/time/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())

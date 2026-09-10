@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Final - 종합 응용</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 16px 60px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; }
+
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    h2 { font-size: 16px; margin-top: 0; }
+
+    #loginBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 24px;
+        font-size: 14px;
+    }
+    #loginBar a { color: #2f6feb; text-decoration: underline; }
+    #loginBar button { border: none; background: #6b7280; color: #fff; padding: 6px 12px; border-radius: 5px; font-size: 13px; cursor: pointer; }
+
+    /* 시간 배너 */
+    #timeBanner {
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        color: #fff;
+        margin-bottom: 24px;
+        transition: background 0.3s;
+    }
+    #timeBanner.day { background: linear-gradient(135deg, #6fa8ff, #4a7ee0); }
+    #timeBanner.night { background: linear-gradient(135deg, #2c3e6b, #14172e); }
+    #timeBanner .icon { font-size: 40px; }
+    #timeBanner .period { font-size: 20px; font-weight: bold; margin-top: 6px; }
+    #timeBanner .current { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+    /* 잠금 안내 */
+    .locked {
+        text-align: center;
+        color: #888;
+        font-size: 13px;
+        padding: 20px 10px;
+    }
+    .locked a {
+        display: inline-block;
+        margin-top: 10px;
+        color: #fff;
+        background: #2f6feb;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    form { display: flex; flex-direction: column; gap: 8px; }
+    input, textarea {
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: inherit;
+    }
+    textarea { min-height: 60px; resize: vertical; }
+    button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        align-self: flex-start;
+    }
+    button.danger { background: #d64545; padding: 4px 10px; font-size: 12px; }
+    button:hover { opacity: 0.9; }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    ul.list { list-style: none; padding: 0; margin: 12px 0 0; }
+    ul.list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 10px 4px;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+        gap: 10px;
+    }
+    .item-main { flex-grow: 1; }
+    .item-key { font-weight: bold; }
+    .item-meta { font-size: 11px; color: #999; }
+    .empty { color: #999; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>종합 응용 페이지</h1>
+<p class="desc">studyFinal — 로그인 여부에 따라 기능이 달라지고, 개인 저장소와 한국시간 기준 주/야간 표시를 제공합니다.</p>
+
+<div id="loginBar">
+    <span id="loginBarText">로그인 상태 확인 중...</span>
+    <button type="button" id="logoutBtn" style="display:none;">로그아웃</button>
+</div>
+
+<div id="errorBox"></div>
+
+<div id="timeBanner">
+    <div class="icon" id="timeIcon">⏳</div>
+    <div class="period" id="timePeriod">불러오는 중...</div>
+    <div class="current" id="timeCurrent"></div>
+</div>
+
+<section>
+    <h2>쪽지 보내기</h2>
+    <div id="messageLocked" class="locked" style="display:none;">
+        로그인해야 쪽지를 보낼 수 있습니다.
+        <br><a href="LoginHtmlFile.html">로그인 / 회원가입 하러 가기</a>
+    </div>
+    <div id="messageUnlocked" style="display:none;">
+        <form id="sendForm">
+            <input type="text" id="receiverUsername" placeholder="받는 사람 아이디" required>
+            <textarea id="messageContent" placeholder="내용을 입력하세요" required></textarea>
+            <button type="submit">보내기</button>
+        </form>
+        <ul class="list" id="inboxList"></ul>
+    </div>
+</section>
+
+<section>
+    <h2>나만의 저장소</h2>
+    <div id="storageLocked" class="locked" style="display:none;">
+        로그인해야 저장소를 쓸 수 있습니다.
+        <br><a href="LoginHtmlFile.html">로그인 / 회원가입 하러 가기</a>
+    </div>
+    <div id="storageUnlocked" style="display:none;">
+        <form id="storageForm">
+            <input type="text" id="storageKey" placeholder="키 (예: 메모1)" required>
+            <textarea id="storageValue" placeholder="저장할 내용" required></textarea>
+            <button type="submit">저장 (localStorage처럼, 서버 DB에)</button>
+        </form>
+        <ul class="list" id="storageList"></ul>
+    </div>
+</section>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+    }
+    function getToken() { return localStorage.getItem("token"); }
+    function getUsername() { return localStorage.getItem("username"); }
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text ?? "";
+        return div.innerHTML;
+    }
+
+    async function authApi(path, options = {}) {
+        const token = getToken();
+        if (!token) throw new Error("로그인이 필요합니다.");
+
+        const headers = Object.assign({}, options.headers || {}, { "Authorization": "Bearer " + token });
+        const response = await fetch(path, Object.assign({}, options, { headers }));
+
+        if (response.status === 403) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("username");
+            refreshLoginBar();
+            throw new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
+        }
+
+        const isJson = response.headers.get("content-type")?.includes("application/json");
+        const body = isJson ? await response.json() : null;
+
+        if (!response.ok) {
+            throw new Error(body?.message || `요청 실패 (HTTP ${response.status})`);
+        }
+        return body;
+    }
+
+    // ---- 로그인 상태 바 & 조건부 섹션 ----
+    function refreshLoginBar() {
+        const token = getToken();
+        const username = getUsername();
+        const loggedIn = !!(token && username);
+
+        const barText = document.getElementById("loginBarText");
+        if (loggedIn) {
+            barText.innerHTML = `<strong>${escapeHtml(username)}</strong>님으로 로그인됨`;
+        } else {
+            barText.innerHTML = `로그인되어 있지 않습니다. <a href="LoginHtmlFile.html">로그인하기</a>`;
+        }
+        document.getElementById("logoutBtn").style.display = loggedIn ? "inline-block" : "none";
+
+        document.getElementById("messageLocked").style.display = loggedIn ? "none" : "block";
+        document.getElementById("messageUnlocked").style.display = loggedIn ? "block" : "none";
+        document.getElementById("storageLocked").style.display = loggedIn ? "none" : "block";
+        document.getElementById("storageUnlocked").style.display = loggedIn ? "block" : "none";
+
+        if (loggedIn) {
+            loadInbox();
+            loadStorage();
+        }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        refreshLoginBar();
+    });
+
+    // ---- 쪽지 (조건부) ----
+    document.getElementById("sendForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+        const receiverUsername = document.getElementById("receiverUsername").value;
+        const content = document.getElementById("messageContent").value;
+
+        try {
+            await authApi("/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ receiverUsername, content })
+            });
+            e.target.reset();
+            await loadInbox();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    async function loadInbox() {
+        try {
+            const messages = await authApi("/messages/inbox", { method: "GET" });
+            const list = document.getElementById("inboxList");
+            list.innerHTML = "";
+            if (messages.length === 0) {
+                list.innerHTML = '<li class="empty">받은 쪽지가 없습니다.</li>';
+                return;
+            }
+            messages.forEach((m) => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <div class="item-main">
+                        <div class="item-key">${escapeHtml(m.senderUsername)}</div>
+                        <div>${escapeHtml(m.content)}</div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ---- 저장소 (조건부) ----
+    document.getElementById("storageForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+        const key = document.getElementById("storageKey").value.trim();
+        const value = document.getElementById("storageValue").value;
+
+        try {
+            await authApi(`/storage/${encodeURIComponent(key)}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ value })
+            });
+            e.target.reset();
+            await loadStorage();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    async function loadStorage() {
+        try {
+            const items = await authApi("/storage", { method: "GET" });
+            const list = document.getElementById("storageList");
+            list.innerHTML = "";
+            if (items.length === 0) {
+                list.innerHTML = '<li class="empty">저장된 항목이 없습니다.</li>';
+                return;
+            }
+            items.forEach((item) => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <div class="item-main">
+                        <div class="item-key">${escapeHtml(item.key)}</div>
+                        <div>${escapeHtml(item.value)}</div>
+                        <div class="item-meta">수정: ${item.updatedAt}</div>
+                    </div>
+                    <button type="button" class="danger" data-key="${escapeHtml(item.key)}">삭제</button>
+                `;
+                li.querySelector("button").addEventListener("click", () => deleteStorageItem(item.key));
+                list.appendChild(li);
+            });
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function deleteStorageItem(key) {
+        clearError();
+        try {
+            await authApi(`/storage/${encodeURIComponent(key)}`, { method: "DELETE" });
+            await loadStorage();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ---- 시간(주/야간) ----
+    async function loadTimeStatus() {
+        try {
+            const response = await fetch("/time/status");
+            const status = await response.json();
+
+            const banner = document.getElementById("timeBanner");
+            banner.className = status.night ? "night" : "day";
+            document.getElementById("timeIcon").textContent = status.night ? "🌙" : "☀️";
+            document.getElementById("timePeriod").textContent = status.message;
+            document.getElementById("timeCurrent").textContent = `현재 한국 시간: ${status.currentTime}`;
+        } catch (err) {
+            document.getElementById("timePeriod").textContent = "시간 정보를 불러오지 못했습니다.";
+        }
+    }
+
+    // ---- 초기화 ----
+    refreshLoginBar();
+    loadTimeStatus();
+    setInterval(loadTimeStatus, 30000); // 30초마다 갱신
+</script>
+
+</body>
+</html>

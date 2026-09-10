@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로그인 / 회원가입</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 420px;
+        margin: 60px auto;
+        padding: 0 16px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; text-align: center; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; text-align: center; font-size: 13px; }
+
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+    h2 { font-size: 15px; margin: 0 0 12px; }
+
+    label { display: block; font-size: 13px; color: #555; margin-top: 10px; margin-bottom: 4px; }
+    input {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 16px;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: #6b7280; }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+    #successBox {
+        display: none;
+        background: #eafaf1;
+        border: 1px solid #a3e4bc;
+        color: #1e7e44;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    #loggedInView { display: none; text-align: center; }
+    #loggedInView .username { font-size: 16px; font-weight: bold; margin: 10px 0 20px; }
+
+    .switch { text-align: center; font-size: 13px; color: #888; margin-top: -6px; margin-bottom: 18px; }
+    .switch a { color: #2f6feb; text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Spring Boot 학습 허브</h1>
+<p class="desc">로그인하면 쪽지, 저장소 같은 개인 기능을 쓸 수 있습니다.</p>
+
+<div id="errorBox"></div>
+<div id="successBox"></div>
+
+<div id="loggedInView">
+    <section>
+        <h2>이미 로그인되어 있습니다</h2>
+        <div class="username" id="meUsername"></div>
+        <a href="main.html"><button type="button">허브로 이동</button></a>
+        <button type="button" class="secondary" id="logoutBtn">로그아웃</button>
+    </section>
+</div>
+
+<div id="authView">
+    <section id="loginSection">
+        <h2>로그인</h2>
+        <form id="loginForm">
+            <label for="loginUsername">아이디</label>
+            <input type="text" id="loginUsername" required>
+            <label for="loginPassword">비밀번호</label>
+            <input type="password" id="loginPassword" required>
+            <button type="submit">로그인</button>
+        </form>
+    </section>
+    <div class="switch">계정이 없으신가요? <a id="showSignup">회원가입</a></div>
+
+    <section id="signupSection" style="display:none;">
+        <h2>회원가입</h2>
+        <form id="signupForm">
+            <label for="signupUsername">아이디 (3자 이상)</label>
+            <input type="text" id="signupUsername" required>
+            <label for="signupPassword">비밀번호 (4자 이상)</label>
+            <input type="password" id="signupPassword" required>
+            <button type="submit">가입하기</button>
+        </form>
+    </section>
+    <div class="switch" id="showLoginSwitch" style="display:none;">이미 계정이 있으신가요? <a id="showLogin">로그인</a></div>
+</div>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
+
+    function showError(message) {
+        successBox.style.display = "none";
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+    function showSuccess(message) {
+        errorBox.style.display = "none";
+        successBox.textContent = message;
+        successBox.style.display = "block";
+    }
+    function clearMessages() {
+        errorBox.style.display = "none";
+        successBox.style.display = "none";
+    }
+
+    function refreshView() {
+        const token = localStorage.getItem("token");
+        const username = localStorage.getItem("username");
+
+        if (token && username) {
+            document.getElementById("loggedInView").style.display = "block";
+            document.getElementById("authView").style.display = "none";
+            document.getElementById("meUsername").textContent = username;
+        } else {
+            document.getElementById("loggedInView").style.display = "none";
+            document.getElementById("authView").style.display = "block";
+        }
+    }
+
+    document.getElementById("showSignup").addEventListener("click", () => {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("signupSection").style.display = "block";
+        document.getElementById("showLoginSwitch").style.display = "block";
+        document.querySelector(".switch").style.display = "none";
+        clearMessages();
+    });
+    document.getElementById("showLogin").addEventListener("click", () => {
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("signupSection").style.display = "none";
+        document.getElementById("showLoginSwitch").style.display = "none";
+        document.querySelector(".switch").style.display = "block";
+        clearMessages();
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearMessages();
+        const username = document.getElementById("loginUsername").value;
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+            const response = await fetch("/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const body = await response.json();
+            if (!response.ok) throw new Error(body.message || "로그인에 실패했습니다.");
+
+            localStorage.setItem("token", body.token);
+            localStorage.setItem("username", username);
+            showSuccess("로그인되었습니다.");
+            refreshView();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearMessages();
+        const username = document.getElementById("signupUsername").value;
+        const password = document.getElementById("signupPassword").value;
+
+        try {
+            const response = await fetch("/auth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const body = response.status !== 201 ? await response.json() : null;
+            if (!response.ok) throw new Error(body.message || "회원가입에 실패했습니다.");
+
+            showSuccess("회원가입이 완료되었습니다. 로그인해주세요.");
+            document.getElementById("showLogin").click();
+            document.getElementById("loginUsername").value = username;
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        refreshView();
+    });
+
+    refreshView();
+</script>
+
+</body>
+</html>

@@ -62,6 +62,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(StorageItemNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleStorageItemNotFound(StorageItemNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
     @ExceptionHandler(StoredFileNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleStoredFileNotFound(StoredFileNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
