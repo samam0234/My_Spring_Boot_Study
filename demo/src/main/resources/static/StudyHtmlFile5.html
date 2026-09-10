@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study10 - 파일 업로드 &amp; 실시간 알림</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 24px; }
+
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    h2 { font-size: 16px; margin-top: 0; }
+    p.hint { font-size: 12px; color: #888; margin-top: -4px; }
+
+    #loginNotice {
+        background: #fff8e1;
+        border: 1px solid #ffe08a;
+        color: #8a6d00;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #2f6feb;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    button.secondary { background: #6b7280; }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #b9c2d0; cursor: not-allowed; }
+
+    #errorBox {
+        display: none;
+        background: #fdecea;
+        border: 1px solid #f5c2c0;
+        color: #a12b2b;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    #uploadResult { margin-top: 14px; display: none; }
+    #uploadResult img { max-width: 100%; border-radius: 6px; margin-top: 8px; }
+    #uploadResult a { word-break: break-all; }
+
+    #notificationLog {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 6px;
+    }
+    #notificationLog li {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+    }
+    #notificationLog li:last-child { border-bottom: none; }
+    .log-empty { color: #999; }
+    .status-dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #ccc;
+        margin-right: 6px;
+    }
+    .status-dot.connected { background: #2ecc71; }
+
+    .swagger-link {
+        display: inline-block;
+        margin-top: 8px;
+        color: #2f6feb;
+        text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+
+<h1>파일 업로드 &amp; 실시간 알림 &amp; API 문서</h1>
+<p class="desc">study10 — 지금까지 배운 기능들을 한 페이지에 모았습니다.</p>
+
+<div id="errorBox"></div>
+<div id="loginNotice" style="display:none;">로그인해야 파일 업로드와 실시간 알림을 쓸 수 있습니다. (<code>StudyHtmlFile2.html</code>에서 먼저 로그인해주세요 — 같은 브라우저면 토큰이 공유됩니다.)</div>
+
+<section>
+    <h2>① 파일 업로드</h2>
+    <p class="hint">업로드는 로그인이 필요하지만, 업로드된 파일 조회(다운로드)는 누구나 가능합니다.</p>
+    <input type="file" id="fileInput">
+    <button type="button" id="uploadBtn">업로드</button>
+
+    <div id="uploadResult">
+        <div><strong>업로드 완료:</strong> <span id="uploadedName"></span></div>
+        <a id="uploadedLink" href="#" target="_blank">파일 열기</a>
+        <div id="imagePreview"></div>
+    </div>
+</section>
+
+<section>
+    <h2>② 실시간 알림 (Server-Sent Events)</h2>
+    <p class="hint"><code>StudyHtmlFile2.html</code>에서 다른 계정으로 로그인해서 나에게 쪽지를 보내보면, 새로고침 없이 여기에 바로 나타납니다.</p>
+    <button type="button" id="connectBtn"><span class="status-dot" id="statusDot"></span>연결하기</button>
+    <button type="button" class="secondary" id="disconnectBtn" disabled>연결 끊기</button>
+
+    <ul id="notificationLog" style="margin-top:14px;">
+        <li class="log-empty">아직 연결하지 않았습니다.</li>
+    </ul>
+</section>
+
+<section>
+    <h2>③ API 문서 (Swagger UI)</h2>
+    <p class="hint">지금까지 만든 모든 REST API의 명세를 자동으로 생성해서 보여줍니다. Swagger UI에서 "Authorize" 버튼으로 토큰을 넣으면 인증이 필요한 API도 바로 테스트해볼 수 있습니다.</p>
+    <a class="swagger-link" href="/swagger-ui.html" target="_blank">Swagger UI 열기 →</a>
+</section>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+    function getToken() { return localStorage.getItem("token"); }
+
+    function refreshLoginNotice() {
+        const needsLogin = !getToken();
+        document.getElementById("loginNotice").style.display = needsLogin ? "block" : "none";
+        document.getElementById("uploadBtn").disabled = needsLogin;
+        document.getElementById("connectBtn").disabled = needsLogin;
+    }
+
+    // ---- ① 파일 업로드 ----
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+        clearError();
+        const input = document.getElementById("fileInput");
+        const file = input.files[0];
+        if (!file) {
+            showError("업로드할 파일을 선택해주세요.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("/files", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + getToken() },
+                body: formData
+            });
+            const body = await response.json();
+            if (!response.ok) {
+                throw new Error(body.message || `업로드 실패 (HTTP ${response.status})`);
+            }
+
+            document.getElementById("uploadedName").textContent = body.originalName;
+            const link = document.getElementById("uploadedLink");
+            link.href = body.url;
+            link.textContent = body.url;
+
+            const preview = document.getElementById("imagePreview");
+            preview.innerHTML = "";
+            if (body.contentType && body.contentType.startsWith("image/")) {
+                const img = document.createElement("img");
+                img.src = body.url;
+                preview.appendChild(img);
+            }
+
+            document.getElementById("uploadResult").style.display = "block";
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    // ---- ② 실시간 알림 ----
+    let eventSource = null;
+
+    function appendLog(text) {
+        const log = document.getElementById("notificationLog");
+        const emptyItem = log.querySelector(".log-empty");
+        if (emptyItem) emptyItem.remove();
+
+        const li = document.createElement("li");
+        const time = new Date().toLocaleTimeString("ko-KR");
+        li.textContent = `[${time}] ${text}`;
+        log.prepend(li);
+    }
+
+    document.getElementById("connectBtn").addEventListener("click", () => {
+        clearError();
+        const token = getToken();
+        if (!token) {
+            showError("로그인이 필요합니다.");
+            return;
+        }
+
+        // 브라우저 EventSource는 커스텀 헤더를 못 붙이므로 토큰을 쿼리 파라미터로 전달
+        eventSource = new EventSource(`/notifications/stream?token=${encodeURIComponent(token)}`);
+
+        eventSource.addEventListener("connected", () => {
+            document.getElementById("statusDot").classList.add("connected");
+            appendLog("서버에 연결되었습니다.");
+        });
+
+        eventSource.addEventListener("new-message", (event) => {
+            const message = JSON.parse(event.data);
+            appendLog(`새 쪽지: ${message.senderUsername} → "${message.content}"`);
+        });
+
+        eventSource.onerror = () => {
+            appendLog("연결이 끊어졌습니다.");
+            document.getElementById("statusDot").classList.remove("connected");
+        };
+
+        document.getElementById("connectBtn").disabled = true;
+        document.getElementById("disconnectBtn").disabled = false;
+    });
+
+    document.getElementById("disconnectBtn").addEventListener("click", () => {
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+        }
+        document.getElementById("statusDot").classList.remove("connected");
+        document.getElementById("connectBtn").disabled = false;
+        document.getElementById("disconnectBtn").disabled = true;
+        appendLog("연결을 직접 종료했습니다.");
+    });
+
+    refreshLoginNotice();
+</script>
+
+</body>
+</html>

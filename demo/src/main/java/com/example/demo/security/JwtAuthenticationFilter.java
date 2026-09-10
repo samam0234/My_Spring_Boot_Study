@@ -49,6 +49,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
-        return null;
+
+        // 브라우저의 EventSource(SSE)는 커스텀 헤더를 지정할 수 없어 쿼리 파라미터로 대체 지원
+        return request.getParameter("token");
     }
 }

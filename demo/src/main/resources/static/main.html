@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring Boot 학습 허브</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Malgun Gothic", sans-serif;
+        max-width: 880px;
+        margin: 40px auto;
+        padding: 0 16px 60px;
+        background: #f5f6f8;
+        color: #222;
+    }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    p.desc { color: #666; margin-top: 0; margin-bottom: 20px; }
+
+    #loginBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 28px;
+        font-size: 14px;
+    }
+    #loginBar .status-dot {
+        display: inline-block;
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: #ccc;
+        margin-right: 8px;
+    }
+    #loginBar .status-dot.on { background: #2ecc71; }
+    #loginBar a { color: #2f6feb; text-decoration: underline; }
+    #loginBar button {
+        border: none;
+        background: #6b7280;
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+
+    .card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .card:hover {
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+    .card .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: bold;
+        color: #2f6feb;
+        background: #eaf1ff;
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        width: fit-content;
+    }
+    .card h2 { font-size: 16px; margin: 0 0 6px; }
+    .card p { font-size: 13px; color: #666; margin: 0; line-height: 1.5; flex-grow: 1; }
+    .card .auth-note { font-size: 11px; color: #a12b2b; margin-top: 10px; }
+    .card .open { font-size: 13px; color: #2f6feb; margin-top: 12px; font-weight: bold; }
+
+    footer { margin-top: 32px; font-size: 12px; color: #999; text-align: center; }
+    footer a { color: #999; }
+</style>
+</head>
+<body>
+
+<h1>Spring Boot 학습 허브</h1>
+<p class="desc">study0~10에서 만든 백엔드 기능들을 한 곳에서 열어볼 수 있는 페이지입니다.</p>
+
+<div id="loginBar">
+    <span><span class="status-dot" id="statusDot"></span><span id="loginText">로그인 상태 확인 중...</span></span>
+    <button type="button" id="logoutBtn" style="display:none;">로그아웃</button>
+</div>
+
+<div class="grid">
+    <a class="card" href="StudyHtmlFile.html">
+        <span class="tag">study6</span>
+        <h2>게시판</h2>
+        <p>글을 쓰고 목록을 보고 수정/삭제하는 게시판입니다. 로그인 없이 누구나 사용할 수 있고, 페이지네이션이 적용되어 있습니다.</p>
+        <span class="open">열기 →</span>
+    </a>
+
+    <a class="card" href="StudyHtmlFile2.html">
+        <span class="tag">study7</span>
+        <h2>로그인 &amp; 쪽지</h2>
+        <p>회원가입/로그인을 하면 다른 사용자와 1:1 쪽지를 주고받을 수 있습니다. 여기서 로그인하면 다른 페이지에서도 로그인 상태가 유지됩니다.</p>
+        <span class="open">열기 →</span>
+    </a>
+
+    <a class="card" href="StudyHtmlFile3.html">
+        <span class="tag">study8</span>
+        <h2>날씨</h2>
+        <p>도시 이름을 검색하면 외부 API(Open-Meteo)에서 실시간 날씨를 가져와 보여줍니다. 로그인이 필요 없습니다.</p>
+        <span class="open">열기 →</span>
+    </a>
+
+    <a class="card" href="StudyHtmlFile4.html">
+        <span class="tag">study9</span>
+        <h2>주식 시세 &amp; 관심 종목</h2>
+        <p>종목 시세는 누구나 검색할 수 있고, 로그인하면 관심 종목을 저장해서 실시간 가격과 함께 모아볼 수 있습니다.</p>
+        <span class="auth-note">⚠ 관심 종목 기능은 로그인 필요</span>
+        <span class="open">열기 →</span>
+    </a>
+
+    <a class="card" href="StudyHtmlFile5.html">
+        <span class="tag">study10</span>
+        <h2>파일 업로드 &amp; 실시간 알림</h2>
+        <p>파일을 업로드해보고, 다른 계정에서 나에게 쪽지를 보내면 실시간(SSE)으로 알림이 뜨는 걸 확인할 수 있습니다.</p>
+        <span class="auth-note">⚠ 로그인 필요</span>
+        <span class="open">열기 →</span>
+    </a>
+
+    <a class="card" href="/swagger-ui.html" target="_blank">
+        <span class="tag">API 문서</span>
+        <h2>Swagger UI</h2>
+        <p>지금까지 만든 모든 REST API의 명세를 자동 생성된 문서로 확인하고, 직접 요청을 보내볼 수 있습니다.</p>
+        <span class="open">새 탭에서 열기 →</span>
+    </a>
+</div>
+
+<footer>
+    Spring Boot 학습 저장소 — study0.md ~ study10.md 문서와 함께 보세요.
+</footer>
+
+<script>
+    function refreshLoginBar() {
+        const token = localStorage.getItem("token");
+        const username = localStorage.getItem("username");
+        const dot = document.getElementById("statusDot");
+        const text = document.getElementById("loginText");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (token && username) {
+            dot.classList.add("on");
+            text.innerHTML = `<strong>${username}</strong>님으로 로그인됨`;
+            logoutBtn.style.display = "inline-block";
+        } else {
+            dot.classList.remove("on");
+            text.innerHTML = `로그인되어 있지 않습니다. <a href="StudyHtmlFile2.html">여기서 로그인하기</a>`;
+            logoutBtn.style.display = "none";
+        }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        refreshLoginBar();
+    });
+
+    refreshLoginBar();
+</script>
+
+</body>
+</html>

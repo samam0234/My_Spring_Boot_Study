@@ -104,6 +104,11 @@
 <section>
     <h2>글 목록</h2>
     <ul id="postList"></ul>
+    <div id="pagination" style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+        <button type="button" id="prevPageBtn" class="secondary">이전</button>
+        <span id="pageInfo" style="font-size:13px; color:#666;"></span>
+        <button type="button" id="nextPageBtn" class="secondary">다음</button>
+    </div>
 </section>
 
 <section id="detail">
@@ -167,14 +172,25 @@
         return date.toLocaleString("ko-KR");
     }
 
-    async function loadPosts() {
+    let currentPage = 0;
+
+    async function loadPosts(page = currentPage) {
         clearError();
         try {
-            const posts = await api("", { method: "GET" });
-            renderPostList(posts);
+            const result = await api(`?page=${page}&size=5`, { method: "GET" });
+            currentPage = result.page;
+            renderPostList(result.content);
+            renderPagination(result);
         } catch (err) {
             showError(err.message);
         }
+    }
+
+    function renderPagination(result) {
+        document.getElementById("pageInfo").textContent =
+            `${result.page + 1} / ${Math.max(result.totalPages, 1)} 페이지 (전체 ${result.totalElements}건)`;
+        document.getElementById("prevPageBtn").disabled = result.page === 0;
+        document.getElementById("nextPageBtn").disabled = !result.hasNext;
     }
 
     function renderPostList(posts) {
@@ -297,6 +313,13 @@
     document.getElementById("closeBtn").addEventListener("click", () => {
         detail.style.display = "none";
         currentPostId = null;
+    });
+
+    document.getElementById("prevPageBtn").addEventListener("click", () => {
+        if (currentPage > 0) loadPosts(currentPage - 1);
+    });
+    document.getElementById("nextPageBtn").addEventListener("click", () => {
+        loadPosts(currentPage + 1);
     });
 
     loadPosts();

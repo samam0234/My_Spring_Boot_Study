@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.Message;
 import com.example.demo.domain.User;
+import com.example.demo.dto.MessageResponse;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.repository.MessageRepository;
 import com.example.demo.repository.UserRepository;
@@ -14,16 +15,24 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository) {
+    public MessageService(MessageRepository messageRepository,
+                           UserRepository userRepository,
+                           NotificationService notificationService) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     public Message send(String senderUsername, String receiverUsername, String content) {
         User sender = getUser(senderUsername);
         User receiver = getUser(receiverUsername);
-        return messageRepository.save(new Message(sender, receiver, content));
+        Message saved = messageRepository.save(new Message(sender, receiver, content));
+
+        notificationService.notify(receiverUsername, "new-message", MessageResponse.from(saved));
+
+        return saved;
     }
 
     public List<Message> findInbox(String username) {

@@ -1,11 +1,14 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Post;
+import com.example.demo.dto.PageResponse;
 import com.example.demo.dto.PostRequest;
 import com.example.demo.dto.PostResponse;
 import com.example.demo.dto.PostUpdateRequest;
 import com.example.demo.service.PostService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,8 +18,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
@@ -35,10 +36,8 @@ public class PostController {
     }
 
     @GetMapping
-    public List<PostResponse> findAll() {
-        return postService.findAll().stream()
-                .map(PostResponse::from)
-                .toList();
+    public PageResponse<PostResponse> findAll(@PageableDefault(size = 5) Pageable pageable) {
+        return PageResponse.from(postService.findAll(pageable), PostResponse::from);
     }
 
     @GetMapping("/{id}")

@@ -41,3 +41,6 @@ out/
 *.db-journal
 *.db-shm
 *.db-wal
+
+### 업로드된 파일 ###
+/uploads/

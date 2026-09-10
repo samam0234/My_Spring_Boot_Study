@@ -3,9 +3,9 @@ package com.example.demo.service;
 import com.example.demo.domain.Post;
 import com.example.demo.exception.PostNotFoundException;
 import com.example.demo.repository.PostRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class PostService {
@@ -20,8 +20,8 @@ public class PostService {
         return postRepository.save(new Post(title, content, author));
     }
 
-    public List<Post> findAll() {
-        return postRepository.findAllByOrderByCreatedAtDesc();
+    public Page<Post> findAll(Pageable pageable) {
+        return postRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 
     public Post findById(Long id) {
