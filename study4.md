@@ -58,12 +58,15 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'                           // ← 추가 (JWT 실제 구현체)
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'                        // ← 추가 (JSON 직렬화)
 	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'org.springframework.boot:spring-boot-h2console'             // ← 추가 (H2 콘솔 자동 설정)
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 ```
 
 > ⚠️ `spring-boot-starter-security`를 추가하는 순간, **기본적으로 모든 API가 인증을 요구**하도록 바뀝니다. 아무 설정도 하지 않으면 이전 study의 `/hello`, `/members`가 전부 막힙니다. 그래서 아래에서 어떤 경로를 허용할지 직접 설정해야 합니다.
+>
+> ⚠️ Spring Boot 4.x부터는 H2 콘솔 자동 설정이 `spring-boot-starter-data-jpa`에서 분리되어 **`spring-boot-h2console`** 모듈로 따로 존재합니다. study2에서는 데이터소스가 자동 구성되어 우연히 동작했지만, Security를 도입해 경로별 접근 제어를 명시하는 시점에 이 의존성이 빠져 있으면 H2 콘솔 관련 자동 설정 클래스 자체가 없어 `PathRequest.toH2Console()` 같은 헬퍼도 쓸 수 없습니다. 이번에 명시적으로 추가했습니다.
 
 `application.properties`에 JWT 비밀 키와 만료 시간을 추가합니다.
 ```properties
@@ -362,6 +365,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -394,7 +398,8 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/h2-console/**", "/hello/**").permitAll()
+                        .requestMatchers(PathRequest.toH2Console()).permitAll()
+                        .requestMatchers("/auth/**", "/hello/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -410,7 +415,8 @@ public class SecurityConfig {
 | `csrf.disable()` | CSRF(Cross-Site Request Forgery) 보호는 **브라우저 세션/쿠키 기반** 인증에서 중요한데, 우리는 JWT(Stateless)를 쓰므로 비활성화 |
 | `sessionCreationPolicy(STATELESS)` | 서버가 세션을 만들지 않겠다고 선언 (JWT 방식의 핵심) |
 | `headers().frameOptions().disable()` | H2 콘솔이 `<iframe>`을 사용하는데, Spring Security가 기본적으로 프레임 사용을 막아서(clickjacking 방지) 이걸 풀어줌 |
-| `requestMatchers("/auth/**", "/h2-console/**", "/hello/**").permitAll()` | 이 경로들은 인증 없이 접근 허용 |
+| `PathRequest.toH2Console()` | 문자열 패턴(`"/h2-console/**"`)을 직접 쓰는 대신, Spring Boot가 제공하는 전용 `RequestMatcher`. H2 콘솔의 실제 경로가 바뀌어도(`spring.h2.console.path`) 이 헬퍼가 알아서 맞춰줌 |
+| `requestMatchers("/auth/**", "/hello/**").permitAll()` | 이 경로들은 인증 없이 접근 허용 |
 | `anyRequest().authenticated()` | 그 외 나머지 모든 요청(`/members/**` 등)은 인증 필요 |
 | `addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)` | 우리가 만든 JWT 필터를 Spring Security 기본 필터보다 앞에 배치 |
 
