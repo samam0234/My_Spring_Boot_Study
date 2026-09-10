@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Member;
+import com.example.demo.dto.MemberRequest;
+import com.example.demo.dto.MemberResponse;
 import com.example.demo.service.MemberService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,34 +28,31 @@ public class MemberController {
     }
 
     @PostMapping
-    public ResponseEntity<Member> create(@RequestBody Member member) {
-        Member saved = memberService.create(new Member(member.getName(), member.getEmail()));
-        return ResponseEntity.status(201).body(saved);
+    public ResponseEntity<MemberResponse> create(@Valid @RequestBody MemberRequest request) {
+        Member saved = memberService.create(request.name(), request.email());
+        return ResponseEntity.status(201).body(MemberResponse.from(saved));
     }
 
     @GetMapping
-    public List<Member> findAll() {
-        return memberService.findAll();
+    public List<MemberResponse> findAll() {
+        return memberService.findAll().stream()
+                .map(MemberResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Member> findById(@PathVariable Long id) {
-        return memberService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public MemberResponse findById(@PathVariable Long id) {
+        return MemberResponse.from(memberService.findById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Member> update(@PathVariable Long id, @RequestBody Member member) {
-        return memberService.update(id, member)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public MemberResponse update(@PathVariable Long id, @Valid @RequestBody MemberRequest request) {
+        return MemberResponse.from(memberService.update(id, request.name(), request.email()));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return memberService.delete(id)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        memberService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
