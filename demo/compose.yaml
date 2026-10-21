@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: springboot
+      POSTGRES_USER: spring
+      POSTGRES_PASSWORD: spring
+    ports:
+      - "5432:5432"
+    volumes:
+      - springboot-pg:/var/lib/postgresql/data
+
+volumes:
+  springboot-pg:
