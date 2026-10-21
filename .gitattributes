@@ -1,0 +1,6 @@
+*.java linguist-detectable=true
+*.jsx linguist-detectable=true
+*.js linguist-detectable=true
+*.css linguist-detectable=true
+*.gradle linguist-detectable=true
+*.html linguist-detectable=true
