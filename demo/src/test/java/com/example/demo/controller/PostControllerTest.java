@@ -118,4 +118,37 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.hasNext").value(false));
     }
+
+    @Test
+    void createStoresTagsAndReusesTheSameName() throws Exception {
+        String json = objectMapper.writeValueAsString(
+                new PostRequest("관계 매핑", "N:M 태그", "민아", java.util.List.of("jpa", " jpa ", "계층")));
+
+        mockMvc.perform(post("/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tags.length()").value(2))
+                .andExpect(jsonPath("$.tags[0]").value("jpa"))
+                .andExpect(jsonPath("$.tags[1]").value("계층"));
+    }
+
+    @Test
+    void searchFindsPostByTag() throws Exception {
+        String token = "tagsearch7781";
+        String matched = objectMapper.writeValueAsString(
+                new PostRequest("태그 검색", "본문", "작성자", java.util.List.of(token)));
+        String other = objectMapper.writeValueAsString(
+                new PostRequest("다른 글", "관련 없음", "작성자"));
+
+        mockMvc.perform(post("/posts").contentType(MediaType.APPLICATION_JSON).content(matched))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/posts").contentType(MediaType.APPLICATION_JSON).content(other))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/posts").param("q", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("태그 검색"));
+    }
 }

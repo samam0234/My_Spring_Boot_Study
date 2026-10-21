@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,13 +32,17 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<PostResponse> create(@Valid @RequestBody PostRequest request) {
-        Post saved = postService.create(request.title(), request.content(), request.author());
+        Post saved = postService.create(request.title(), request.content(), request.author(), request.tags());
         return ResponseEntity.status(201).body(PostResponse.from(saved));
     }
 
     @GetMapping
-    public PageResponse<PostResponse> findAll(@PageableDefault(size = 5) Pageable pageable) {
-        return PageResponse.from(postService.findAll(pageable), PostResponse::from);
+    public PageResponse<PostResponse> findAll(@RequestParam(required = false) String q,
+                                               @PageableDefault(size = 5) Pageable pageable) {
+        var page = (q == null || q.isBlank())
+                ? postService.findAll(pageable)
+                : postService.search(q.trim(), pageable);
+        return PageResponse.from(page, PostResponse::from);
     }
 
     @GetMapping("/{id}")
@@ -47,7 +52,7 @@ public class PostController {
 
     @PutMapping("/{id}")
     public PostResponse update(@PathVariable Long id, @Valid @RequestBody PostUpdateRequest request) {
-        return PostResponse.from(postService.update(id, request.title(), request.content()));
+        return PostResponse.from(postService.update(id, request.title(), request.content(), request.tags()));
     }
 
     @DeleteMapping("/{id}")
