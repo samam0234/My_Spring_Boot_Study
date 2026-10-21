@@ -25,4 +25,12 @@ class TimeControllerTest {
                 .andExpect(jsonPath("$.period").exists())
                 .andExpect(jsonPath("$.night").exists());
     }
+
+    @Test
+    void profileIsPublicAndNamesDatasource() throws Exception {
+        mockMvc.perform(get("/time/profile"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeProfiles[0]").value("default"))
+                .andExpect(jsonPath("$.datasource").exists());
+    }
 }
