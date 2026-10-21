@@ -1,6 +1,6 @@
 # studyFinal. 작은 웹사이트
 
-지금까지의 API를 한 화면에서 씁니다. 백엔드는 `demo/`, 화면은 `project/client/`입니다. React(Vite)이고 Spring 템플릿을 수정하지 않습니다.
+지금까지의 API를 한 사이트로 다시 둡니다. `demo/`는 진도가 쌓인 실습 앱이고, 이 사이트의 백엔드는 `project/server`, 화면은 `project/client`입니다. React(Vite)이고 서버 템플릿이 화면을 그리지 않습니다.
 
 사이트 이름은 **결**입니다. 게시판, 쪽지, 날씨, 시세, 파일, 개인 저장소를 한 레이아웃에 넣었습니다.
 
@@ -9,7 +9,7 @@
 터미널을 두 개 엽니다.
 
 ```powershell
-cd demo
+cd project\server
 .\gradlew.bat bootRun
 ```
 
@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-화면 주소는 `http://localhost:5173`입니다. Vite가 `/posts`, `/auth`, `/messages` 등을 `http://localhost:8080`으로 넘깁니다. 개발 서버를 거치지 않고 브라우저가 8080을 직접 부르면 `CorsConfig`가 `http://localhost:5173`을 허용합니다.
+API 주소는 `http://localhost:8082`입니다. `demo` 실습 서버(8080)와 같이 켤 수 있습니다. 화면 주소는 `http://localhost:5173`입니다. Vite가 `/posts`, `/auth`, `/messages` 등을 `http://localhost:8082`로 넘깁니다. 개발 서버를 거치지 않고 브라우저가 8082를 직접 부르면 `SecurityConfig`의 CORS가 `http://localhost:5173`을 허용합니다.
 
 ## 2. 화면과 진도
 
@@ -45,10 +45,10 @@ npm run dev
 
 ## 4. 정적 HTML
 
-`demo/src/main/resources/static/`의 `StudyHtmlFile*.html`은 예전에 단계마다 쓰던 페이지입니다. 예시 사이트의 본편은 `project/client`입니다. Swagger는 그대로 `http://localhost:8080/swagger-ui.html`입니다.
+`demo/src/main/resources/static/`의 `StudyHtmlFile*.html`은 예전에 단계마다 쓰던 페이지입니다. 예시 사이트의 본편은 `project/client`이고, 그 API는 `project/server`입니다. Swagger는 `http://localhost:8082/swagger-ui.html`입니다.
 
 ## 5. 여기서 고정한 것
 
-- 화면 프로젝트와 API 프로젝트를 폴더로 나눕니다.
+- 화면은 `project/client`, API는 `project/server`입니다. 진도 실습은 `demo/`에 둡니다.
 - 화면은 이 저장소의 API만 부릅니다.
 - 로그인 상태는 브라우저의 JWT입니다. 서버 세션이 아닙니다.

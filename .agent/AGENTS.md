@@ -7,8 +7,9 @@
 
 - Spring Boot 학습 기록 저장소입니다.
 - `study0.md`, `study1.md`, `study2.md`, ... 순서로 학습 진도가 진행됩니다. (숫자가 클수록 최신 진도)
-- `demo/`: study1~study10 내용을 실습하는 Spring Boot(Gradle) 프로젝트입니다.
-- `project/client/`: studyFinal의 React 화면입니다. `demo` API를 Vite 프록시로 부릅니다.
+- `demo/`: study1~study10 내용을 실습하는 Spring Boot(Gradle) 프로젝트입니다. 포트 8080.
+- `project/server/`: studyFinal 사이트의 Spring Boot API입니다. 포트 8082. `demo`와 따로 실행합니다.
+- `project/client/`: studyFinal의 React 화면입니다. `project/server` API를 Vite 프록시로 부릅니다.
 
 ## 2. 작업 전 확인 사항
 

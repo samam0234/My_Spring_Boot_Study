@@ -95,7 +95,7 @@ JPA는 테이블을 Java 클래스로 다루는 표준입니다. Spring Data JPA
 | study8 | 테스트와 프로파일 |
 | study9 | 외부 API |
 | study10 | 파일, SSE, OpenAPI |
-| studyFinal | 위 내용을 한 사이트로 묶기. React는 `project/client` |
+| studyFinal | 위 내용을 한 사이트로 묶기. API는 `project/server`, React는 `project/client` |
 
 ## 6. 용어
 

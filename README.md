@@ -7,12 +7,20 @@ Notion 페이지 [Spring Boot](https://app.notion.com/p/3d6d7dec5e2e8173aac3d4c2
 | 폴더 | 하는 일 | 주소 |
 |---|---|---|
 | `demo/` | study1~10이 쌓인 Spring Boot 앱 | http://localhost:8080 |
-| `project/client/` | studyFinal 화면. React가 `demo` API를 부름 | http://localhost:5173 |
+| `project/server/` | studyFinal 사이트 API. 같은 계층과 JWT | http://localhost:8082 |
+| `project/client/` | studyFinal 화면. React가 `project/server`를 부름 | http://localhost:5173 |
 
 ## 실행
 
 ```powershell
 cd demo
+.\gradlew.bat bootRun
+```
+
+사이트를 보려면 `project/server`를 8082로 띄우고 화면은 `project/client`입니다.
+
+```powershell
+cd project\server
 .\gradlew.bat bootRun
 ```
 
@@ -22,9 +30,9 @@ npm install
 npm run dev
 ```
 
-기본 DB는 SQLite `demo/data.db`입니다. PostgreSQL은 `demo/compose.yaml`을 띄운 뒤 `.\gradlew.bat bootRun --args="--spring.profiles.active=postgres"`입니다.
+기본 DB는 각 앱 폴더의 SQLite `data.db`입니다. PostgreSQL은 그 폴더의 `compose.yaml`을 띄운 뒤 `.\gradlew.bat bootRun --args="--spring.profiles.active=postgres"`입니다. `demo`는 호스트 5432, `project/server`는 5433입니다.
 
-테스트는 `demo`에서 `.\gradlew.bat test`입니다. API 문서는 http://localhost:8080/swagger-ui.html 입니다.
+테스트는 각 앱 폴더에서 `.\gradlew.bat test`입니다. 실습 문서는 http://localhost:8080/swagger-ui.html , 사이트 문서는 http://localhost:8082/swagger-ui.html 입니다.
 
 ## 진도
 
@@ -41,7 +49,7 @@ npm run dev
 | [study8.md](study8.md) | 테스트, 프로파일 |
 | [study9.md](study9.md) | 외부 API. 날씨, 시세, 관심종목 |
 | [study10.md](study10.md) | 파일, SSE, OpenAPI |
-| [studyFinal.md](studyFinal.md) | React 예시 사이트 `결` |
+| [studyFinal.md](studyFinal.md) | 사이트 `결`. `project/server`와 React |
 
 `demo/src/main/resources/static/`의 HTML은 이전 단계 페이지입니다. 예시 사이트의 본편은 `project/client`입니다.
 
